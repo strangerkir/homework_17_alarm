@@ -4,6 +4,8 @@
 #define ADC_PIN 4
 #define LED_PIN 18
 #define BUTTON_PIN 16
+#define ALARM_TRIGGER_VOLTAGE 2.0
+#define ALARM_ARM_MIN_VOLTAGE 1.0
 
 struct alarmState {
   bool armed = true;
@@ -33,7 +35,7 @@ void updateState(void) {
         state.armed = false;
         state.triggered = false;
         Serial.println("Alarm disabled");
-      } else if(volt > 1.0) {
+      } else if(volt >= ALARM_ARM_MIN_VOLTAGE) {
         state.armed = true;
         Serial.println("Arming the system");
       } else {
@@ -41,7 +43,7 @@ void updateState(void) {
       }
     }
 
-    if(state.armed && volt < 2.0) {
+    if(state.armed && volt < ALARM_TRIGGER_VOLTAGE) {
       state.triggered = true;
       Serial.println("Alarm triggered!");
     }
