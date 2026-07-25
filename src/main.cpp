@@ -35,8 +35,8 @@ void updateButtonState(void) {
     bool buttonPressed = (buttonValue == LOW);
 
     if(buttonPressed == button.prevPressedState){
+      button.newPressDetected = false;
       if(buttonPressed) {
-        button.newPressDetected = false;
         Serial.println("Button still pressed, ignoring");
       }
       return;
