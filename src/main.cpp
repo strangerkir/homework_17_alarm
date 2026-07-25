@@ -12,7 +12,14 @@ struct alarmState {
   bool triggered = false;
 };
 
-struct alarmState state;
+struct buttonState {
+  bool pressed = false;
+  bool prevPressedState = false;
+  bool newPressDetected = false;
+};
+
+struct alarmState alrm;
+struct buttonState button;
 
 void setup(void)
 {
@@ -23,41 +30,62 @@ void setup(void)
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 }
 
-void updateState(void) {
-    int raw = analogRead(ADC_PIN);
-    float volt = raw * 3.3 / 4096.0;
-    Serial.printf("raw: %d, voltage %.3f \n", raw, volt);
+void updateButtonState(void) {
+    int buttonValue = digitalRead(BUTTON_PIN);
+    bool buttonPressed = (buttonValue == LOW);
 
-    int buttonState = digitalRead(BUTTON_PIN);
-
-    if (buttonState == LOW) {
-      if(state.armed) {
-        state.armed = false;
-        state.triggered = false;
-        Serial.println("Alarm disabled");
-      } else if(volt >= ALARM_ARM_MIN_VOLTAGE) {
-        state.armed = true;
-        Serial.println("Arming the system");
-      } else {
-        Serial.println("Too dark to arm the system");
+    if(buttonPressed == button.prevPressedState){
+      if(buttonPressed) {
+        button.newPressDetected = false;
+        Serial.println("Button still pressed, ignoring");
       }
+      return;
     }
 
-    if(state.armed && volt < ALARM_TRIGGER_VOLTAGE) {
-      state.triggered = true;
-      Serial.println("Alarm triggered!");
+    button.prevPressedState = button.pressed;
+    button.pressed = buttonPressed;
+    button.newPressDetected = (button.pressed && !button.prevPressedState);
+  }
+
+void updateAlarmState(void) {
+  int raw = analogRead(ADC_PIN);
+  float volt = raw * 3.3 / 4096.0;
+  Serial.printf("raw: %d, voltage %.3f \n", raw, volt);
+
+  if (button.newPressDetected) {
+    if(alrm.armed) {
+      alrm.armed = false;
+      alrm.triggered = false;
+      Serial.println("Alarm disabled");
+    } else if(volt >= ALARM_ARM_MIN_VOLTAGE) {
+      alrm.armed = true;
+      Serial.println("Arming the system");
+    } else {
+      Serial.println("Too dark to arm the system");
     }
   }
 
+  if(alrm.armed && volt < ALARM_TRIGGER_VOLTAGE) {
+    alrm.triggered = true;
+    Serial.println("Alarm triggered!");
+  }
+}
+
+void updateStates(void) {
+    updateButtonState();
+    updateAlarmState();
+
+  }
+
 void duty() {
-    updateState();
-    while(state.armed && state.triggered) {
-       digitalWrite(LED_PIN, HIGH);
-       delay(100);
-       digitalWrite(LED_PIN, LOW);  
-       delay(100);
-       updateState();
-    }
+  updateStates();
+  while(alrm.armed && alrm.triggered) {
+      digitalWrite(LED_PIN, HIGH);
+      delay(100);
+      digitalWrite(LED_PIN, LOW);  
+      delay(100);
+      updateStates();
+  }
 
   }
 
