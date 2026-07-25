@@ -5,7 +5,7 @@
 #define LED_PIN 18
 #define BUTTON_PIN 16
 #define ALARM_TRIGGER_VOLTAGE 2.0
-#define ALARM_ARM_MIN_VOLTAGE 1.0
+#define ALARM_ARM_MIN_VOLTAGE 2.2
 
 struct alarmState {
   bool armed = true;
